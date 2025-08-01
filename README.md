@@ -32,12 +32,11 @@ A web-based virtual memory management simulator built with React frontend and Fl
 ## Running the Application
 You need to run both frontend and backend simultaneously in separate terminals.
 
-### Terminal 1 - Backend
+### Terminals - Backend and Frontend
 ```bash
 cd backend
 python app.py
 
-### Terminal 2 - Frontend
-```bash
+
 cd frontend
 npx react-scripts start
