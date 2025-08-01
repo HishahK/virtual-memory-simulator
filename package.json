@@ -1,0 +1,15 @@
+﻿{
+ "name": "virtualmemorysimulator2",
+ "version": "1.0.0",
+ "description": "Virtual Memory System Design & Implementation Project",
+ "scripts": {
+   "install-all": "cd backend && pip install -r requirements.txt && cd ../frontend && npm install",
+   "start-backend": "cd backend && python app.py",
+   "start-frontend": "cd frontend && npm start",
+   "start": "concurrently \"npm run start-backend\" \"npm run start-frontend\"",
+   "build": "cd frontend && npm run build"
+ },
+ "devDependencies": {
+   "concurrently": "^7.6.0"
+ }
+}
