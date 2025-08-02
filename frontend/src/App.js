@@ -434,11 +434,21 @@ function App() {
   }
 
   try {
+   const pid = parseInt(selectedProcess);
+   const vAddr = parseInt(virtualAddress, 16);
+
    const response = await axios.post(`${API_BASE}/translate_address`, {
-    pid: parseInt(selectedProcess),
-    virtual_address: parseInt(virtualAddress, 16)
+    pid: pid,
+    virtual_address: vAddr
    });
 
+   const newResult = {
+    pid: pid,
+    virtual_address: vAddr,
+    result: response.data.result
+   };
+   
+   setDemoResults(prevResults => [...prevResults, newResult]);
    setTranslationResult(response.data.result);
    setMemoryState(response.data.memory_state);
    setError(null);
@@ -450,8 +460,8 @@ function App() {
 
    updateAccessHistory({
     type: 'address_translation',
-    pid: parseInt(selectedProcess),
-    virtualAddress: parseInt(virtualAddress, 16),
+    pid: pid,
+    virtualAddress: vAddr,
     result: response.data.result
    });
 
@@ -943,11 +953,18 @@ function App() {
       <Play size={16} /> {isRunning ? 'Running...' : 'Run Demo'}
      </button>
      <button
+      onClick={stopDemo}
+      disabled={!isRunning || connectionStatus !== 'connected'}
+      className="stop-btn"
+     >
+      <Square size={16} /> Stop Demo
+     </button>
+     <button
       onClick={resetSimulator}
       disabled={connectionStatus !== 'connected'}
       className="reset-btn"
      >
-      <Square size={16} /> Terminate All
+      <RotateCcw size={16} /> Reset
      </button>
     </div>
    </header>
