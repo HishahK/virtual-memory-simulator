@@ -1,40 +1,121 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
- Play, Square, RotateCcw, Plus, Minus, 
- Monitor, Database, Activity, Settings,
- AlertCircle, CheckCircle, Search, BarChart3,
- FileText, Shuffle, TrendingUp, Cpu,
- Clock, Target, Layers, Zap
+  Play, Square, RotateCcw, Plus, Minus, 
+  Monitor, Database, Activity, Settings,
+  AlertCircle, CheckCircle, Search, BarChart3,
+  FileText, Shuffle, TrendingUp, Cpu,
+  Clock, Target, Layers, Zap
 } from 'lucide-react';
 import './App.css';
 
 const API_BASE = 'http://localhost:5001/api';
 
 function App() {
- const [memoryState, setMemoryState] = useState(null);
- const [currentAlgorithm, setCurrentAlgorithm] = useState('FIFO');
- const [newProcessPages, setNewProcessPages] = useState(4);
- const [selectedProcess, setSelectedProcess] = useState('');
- const [virtualAddress, setVirtualAddress] = useState('');
- const [translationResult, setTranslationResult] = useState(null);
- const [isRunning, setIsRunning] = useState(false);
- const [demoResults, setDemoResults] = useState([]);
- const [connectionStatus, setConnectionStatus] = useState('connecting');
- const [error, setError] = useState(null);
- const [algorithmComparison, setAlgorithmComparison] = useState(null);
- const [report, setReport] = useState(null);
- const [workingSets, setWorkingSets] = useState(null);
- const [tlbState, setTlbState] = useState(null);
- const [showComparison, setShowComparison] = useState(false);
- const [showReport, setShowReport] = useState(false);
+  const [memoryState, setMemoryState] = useState(null);
+  const [currentAlgorithm, setCurrentAlgorithm] = useState('FIFO');
+  const [newProcessPages, setNewProcessPages] = useState(4);
+  const [selectedProcess, setSelectedProcess] = useState('');
+  const [virtualAddress, setVirtualAddress] = useState('');
+  const [translationResult, setTranslationResult] = useState(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const [demoResults, setDemoResults] = useState([]);
+  const [connectionStatus, setConnectionStatus] = useState('connecting');
+  const [error, setError] = useState(null);
+  const [algorithmComparison, setAlgorithmComparison] = useState(null);
+  const [report, setReport] = useState(null);
+  const [workingSets, setWorkingSets] = useState(null);
+  const [tlbState, setTlbState] = useState(null);
+  const [showComparison, setShowComparison] = useState(false);
+  const [showReport, setShowReport] = useState(false);
  const [showTlb, setShowTlb] = useState(false);
  const [showWorkingSets, setShowWorkingSets] = useState(false);
  const [randomAccessCount, setRandomAccessCount] = useState(10);
 
+ const cursorDotRef = useRef(null);
+ const cursorOutlineRef = useRef(null);
+ const requestRef = useRef();
+ const mousePosition = useRef({ x: 0, y: 0 });
+ const cursorPosition = useRef({ x: 0, y: 0 });
+
  useEffect(() => {
    checkConnection();
+   initializeCursor();
+   return () => {
+     if (requestRef.current) {
+       cancelAnimationFrame(requestRef.current);
+     }
+   };
  }, []);
+
+ const initializeCursor = () => {
+   const cursorDot = document.createElement('div');
+   cursorDot.id = 'cursor-dot';
+   document.body.appendChild(cursorDot);
+
+   const cursorOutline = document.createElement('div');
+   cursorOutline.id = 'cursor-dot-outline';
+   document.body.appendChild(cursorOutline);
+
+   cursorDotRef.current = cursorDot;
+   cursorOutlineRef.current = cursorOutline;
+
+   const handleMouseMove = (e) => {
+     mousePosition.current = { x: e.clientX, y: e.clientY };
+     if (cursorDotRef.current && cursorOutlineRef.current) {
+       cursorDotRef.current.style.opacity = '1';
+       cursorOutlineRef.current.style.opacity = '1';
+     }
+   };
+
+   const handleMouseLeave = () => {
+     if (cursorDotRef.current && cursorOutlineRef.current) {
+       cursorDotRef.current.style.opacity = '0';
+       cursorOutlineRef.current.style.opacity = '0';
+     }
+   };
+
+   document.addEventListener('mousemove', handleMouseMove);
+   document.addEventListener('mouseleave', handleMouseLeave);
+
+   const animateCursor = () => {
+     const { x: mouseX, y: mouseY } = mousePosition.current;
+     const { x: cursorX, y: cursorY } = cursorPosition.current;
+
+     const dx = mouseX - cursorX;
+     const dy = mouseY - cursorY;
+
+     cursorPosition.current = {
+       x: cursorX + dx * 0.1,
+       y: cursorY + dy * 0.1
+     };
+
+     if (cursorDotRef.current) {
+       cursorDotRef.current.style.left = `${mouseX}px`;
+       cursorDotRef.current.style.top = `${mouseY}px`;
+     }
+
+     if (cursorOutlineRef.current) {
+       cursorOutlineRef.current.style.left = `${cursorPosition.current.x}px`;
+       cursorOutlineRef.current.style.top = `${cursorPosition.current.y}px`;
+     }
+
+     requestRef.current = requestAnimationFrame(animateCursor);
+   };
+
+   animateCursor();
+
+   return () => {
+     document.removeEventListener('mousemove', handleMouseMove);
+     document.removeEventListener('mouseleave', handleMouseLeave);
+     if (cursorDotRef.current) {
+       document.body.removeChild(cursorDotRef.current);
+     }
+     if (cursorOutlineRef.current) {
+       document.body.removeChild(cursorOutlineRef.current);
+     }
+   };
+ };
 
  const checkConnection = async () => {
    try {
@@ -483,74 +564,6 @@ function App() {
    );
  };
 
- const renderTlbState = () => {
-   if (!showTlb || !tlbState) return null;
-
-   return (
-     <div className="tlb-modal">
-       <div className="modal-content">
-         <div className="modal-header">
-           <h3><Zap size={20} /> TLB State</h3>
-           <button onClick={() => setShowTlb(false)} className="close-btn">×</button>
-         </div>
-         <div className="tlb-content">
-           <div className="tlb-stats">
-             <h4>TLB Statistics</h4>
-             <div className="stats-grid">
-               <div>Hits: {tlbState.stats.hits}</div>
-               <div>Misses: {tlbState.stats.misses}</div>
-               <div>Hit Ratio: {(tlbState.stats.hit_ratio * 100).toFixed(2)}%</div>
-             </div>
-           </div>
-           <div className="tlb-entries">
-             <h4>TLB Entries</h4>
-             <table>
-               <thead>
-                 <tr>
-                   <th>PID_Page</th>
-                   <th>Frame</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 {Object.entries(tlbState.tlb).map(([key, frame]) => (
-                   <tr key={key}>
-                     <td>{key}</td>
-                     <td>{frame}</td>
-                   </tr>
-                 ))}
-               </tbody>
-             </table>
-           </div>
-         </div>
-       </div>
-     </div>
-   );
- };
-
- const renderWorkingSetsModal = () => {
-   if (!showWorkingSets || !workingSets) return null;
-
-   return (
-     <div className="working-sets-modal">
-       <div className="modal-content">
-         <div className="modal-header">
-           <h3><Layers size={20} /> Working Sets</h3>
-           <button onClick={() => setShowWorkingSets(false)} className="close-btn">×</button>
-         </div>
-         <div className="working-sets-content">
-           {Object.entries(workingSets).map(([pid, ws]) => (
-             <div key={pid} className="working-set-item">
-               <h4>Process {pid}</h4>
-               <p>Working Set Size: {ws.size}</p>
-               <p>Pages: {ws.current_set.join(', ') || 'None'}</p>
-             </div>
-           ))}
-         </div>
-       </div>
-     </div>
-   );
- };
-
  return (
    <div className="App">
      <header className="app-header">
@@ -876,7 +889,7 @@ function App() {
 
              {report.thrashing_detected && (
                <div className="report-section warning">
-                 <h4> Thrashing Detected</h4>
+                 <h4>Thrashing Detected</h4>
                  <p>High page fault rate detected. Consider increasing memory or reducing process working sets.</p>
                </div>
              )}
@@ -885,8 +898,71 @@ function App() {
        </div>
      )}
 
-     {renderTlbState()}
-     {renderWorkingSetsModal()}
+     {showTlb && tlbState && (
+       <div className="comparison-modal">
+         <div className="modal-content">
+           <div className="modal-header">
+             <h3><Zap size={20} /> TLB State</h3>
+             <button onClick={() => setShowTlb(false)} className="close-btn">×</button>
+           </div>
+           <div className="comparison-table">
+             <div className="tlb-stats">
+               <div className="stat-item">
+                 <div className="stat-label">TLB Hits</div>
+                 <div className="stat-value">{tlbState.stats.hits}</div>
+               </div>
+               <div className="stat-item">
+                 <div className="stat-label">TLB Misses</div>
+                 <div className="stat-value">{tlbState.stats.misses}</div>
+               </div>
+               <div className="stat-item">
+                 <div className="stat-label">Hit Ratio</div>
+                 <div className="stat-value">{(tlbState.stats.hit_ratio * 100).toFixed(2)}%</div>
+               </div>
+             </div>
+             <h4>TLB Entries</h4>
+             <table>
+               <thead>
+                 <tr>
+                   <th>PID_Page</th>
+                   <th>Frame</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {Object.entries(tlbState.tlb).map(([key, frame]) => (
+                   <tr key={key}>
+                     <td>{key}</td>
+                     <td>{frame}</td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+           </div>
+         </div>
+       </div>
+     )}
+
+     {showWorkingSets && workingSets && (
+       <div className="comparison-modal">
+         <div className="modal-content">
+           <div className="modal-header">
+             <h3><Layers size={20} /> Working Sets</h3>
+             <button onClick={() => setShowWorkingSets(false)} className="close-btn">×</button>
+           </div>
+           <div className="comparison-table">
+             {Object.entries(workingSets).map(([pid, ws]) => (
+               <div key={pid} className="working-set-info">
+                 <h4>Process {pid}</h4>
+                 <div className="ws-stats">
+                   <span>Working Set Size: {ws.size}</span>
+                   <span>Pages: {ws.current_set.join(', ') || 'None'}</span>
+                 </div>
+               </div>
+             ))}
+           </div>
+         </div>
+       </div>
+     )}
    </div>
  );
 }
