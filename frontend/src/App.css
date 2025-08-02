@@ -1183,3 +1183,32 @@ font-size: 0.85rem;
 ::-webkit-scrollbar-thumb:hover {
  background: #ec4899;
 }
+
+.comparison-modal *, 
+.report-modal *,
+.modal-content *,
+.modal-header *,
+.close-btn {
+  cursor: pointer !important;
+}
+
+.close-btn:hover {
+  background: rgba(236, 72, 153, 0.2) !important;
+  transform: scale(1.1);
+}
+
+.modal-content {
+  cursor: default !important;
+}
+
+.modal-content input,
+.modal-content select,
+.modal-content button {
+  cursor: pointer !important;
+}
+
+.modal-content table,
+.modal-content td,
+.modal-content th {
+  cursor: default !important;
+}

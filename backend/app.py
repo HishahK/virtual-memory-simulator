@@ -835,7 +835,10 @@ def health_check():
        'message': 'virtual memory simulator backend is running'
    })
 
+
 if __name__ == '__main__':
-   print("starting virtual memory simulator backend...")
-   app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=False, host='0.0.0.0', port=5001)
+else:
+    
+    app.debug = False
                

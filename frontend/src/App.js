@@ -9,7 +9,9 @@ import {
 } from 'lucide-react';
 import './App.css';
 
-const API_BASE = 'http://localhost:5001/api';
+const API_BASE = process.env.NODE_ENV === 'production' 
+  ? '/api' 
+  : 'http://localhost:5001/api';
 
 function App() {
  const [memoryState, setMemoryState] = useState(null);
