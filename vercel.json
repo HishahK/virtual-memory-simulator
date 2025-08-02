@@ -16,11 +16,12 @@
   "routes": [
     {
       "src": "/api/(.*)",
+      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
       "dest": "backend/index.py"
     },
     {
       "src": "/(.*)",
-      "dest": "frontend/build/index.html"
+      "dest": "frontend/public/index.html"
     }
   ]
 }
