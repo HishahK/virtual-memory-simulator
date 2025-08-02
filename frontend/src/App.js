@@ -569,34 +569,45 @@ function App() {
  };
 
  const compareAlgorithms = async () => {
-   if (connectionStatus !== 'connected') {
-     setError('Not connected to backend');
-     return;
-   }
-   
-   try {
-     const testSequences = [
-       [1, 0x0000], [1, 0x1000], [1, 0x2000], [2, 0x0000], [2, 0x1000],
-       [1, 0x3000], [1, 0x4000], [1, 0x5000], [2, 0x2000], [2, 0x3000],
-       [1, 0x0000], [1, 0x1000], [1, 0x6000], [1, 0x7000], [2, 0x0000]
-     ];
+  if (connectionStatus !== 'connected') {
+    setError('Not connected to backend');
+    return;
+  }
+  
+  
+  if (accessHistory.length < 5) {
+    setError('Not enough memory access data. Please perform some memory operations first (Run Demo, Address Translation, etc.)');
+    return;
+  }
+  
+  try {
+    
+    const testSequences = accessHistory
+      .filter(access => access.type === 'address_translation')
+      .slice(-20) 
+      .map(access => [access.pid, access.virtualAddress]);
+    
+    if (testSequences.length === 0) {
+      setError('No address translation history found. Try translating some addresses first.');
+      return;
+    }
 
-     const response = await axios.post(`${API_BASE}/compare_algorithms`, {
-       sequences: testSequences,
-       future_accesses: testSequences.slice(5)
-     });
-     
-     if (response.data.success) {
-       setAlgorithmComparison(response.data.comparison);
-       setShowComparison(true);
-       setError(null);
-     } else {
-       setError('Algorithm comparison failed: ' + (response.data.error || 'Unknown error'));
-     }
-   } catch (error) {
-     setError('Error comparing algorithms: ' + error.message);
-   }
- };
+    const response = await axios.post(`${API_BASE}/compare_algorithms`, {
+      sequences: testSequences,
+      future_accesses: testSequences.slice(Math.floor(testSequences.length / 2))
+    });
+    
+    if (response.data.success) {
+      setAlgorithmComparison(response.data.comparison);
+      setShowComparison(true);
+      setError(null);
+    } else {
+      setError('Algorithm comparison failed: ' + (response.data.error || 'Unknown error'));
+    }
+  } catch (error) {
+    setError('Error comparing algorithms: ' + error.message);
+  }
+};
 
  const generateReport = async () => {
    if (connectionStatus !== 'connected') {
@@ -843,7 +854,7 @@ function App() {
          </div>
          <div className="stat-item">
            <div className="stat-label">Hit Ratio</div>
-           <div className="stat-value">{(stats.hit_ratio * 100).toFixed(2)}%</div>
+           <div className="stat-value">{((stats.hit_ratio || 0) * 100).toFixed(2)}%</div>
          </div>
          <div className="stat-item">
            <div className="stat-label">Algorithm</div>
