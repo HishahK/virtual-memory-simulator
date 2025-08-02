@@ -227,31 +227,35 @@ function App() {
  };
 
  const resetSimulator = async () => {
-   if (connectionStatus !== 'connected') {
-     setError('Not connected to backend');
-     return;
-   }
+  if (connectionStatus !== 'connected') {
+    setError('Not connected to backend');
+    return;
+  }
 
-   try {
-     const response = await axios.post(`${API_BASE}/reset`);
-     
-     if (response.data.success) {
-       setMemoryState(response.data.memory_state);
-       setTranslationResult(null);
-       setDemoResults([]);
-       setCurrentAlgorithm('FIFO');
-       setSelectedProcess('');
-       setVirtualAddress('');
-       setAlgorithmComparison(null);
-       setReport(null);
-       setWorkingSets(null);
-       setTlbState(null);
-       setError(null);
-     }
-   } catch (error) {
-     setError('Error resetting simulator: ' + error.message);
-   }
- };
+  try {
+    const response = await axios.post(`${API_BASE}/reset`);
+    
+    if (response.data.success) {
+      setMemoryState(response.data.memory_state);
+      setTranslationResult(null);
+      setDemoResults([]);
+      setCurrentAlgorithm('FIFO');
+      setSelectedProcess('');
+      setVirtualAddress('');
+      setAlgorithmComparison(null);
+      setReport(null);
+      setWorkingSets(null);
+      setTlbState(null);
+      setShowComparison(false);
+      setShowReport(false);
+      setShowTlb(false);
+      setShowWorkingSets(false);
+      setError(null);
+    }
+  } catch (error) {
+    setError('Error resetting simulator: ' + error.message);
+  }
+};
 
  const runDemo = async () => {
    if (connectionStatus !== 'connected') {
@@ -279,32 +283,42 @@ function App() {
  };
 
  const compareAlgorithms = async () => {
-   if (connectionStatus !== 'connected') {
-     setError('Not connected to backend');
-     return;
-   }
+  if (connectionStatus !== 'connected') {
+    setError('Not connected to backend');
+    return;
+  }
 
-   try {
-     const testSequences = [
-       [1, 0x0000], [1, 0x1000], [1, 0x2000], [2, 0x0000], [2, 0x1000],
-       [1, 0x3000], [1, 0x4000], [1, 0x5000], [2, 0x2000], [2, 0x3000],
-       [1, 0x0000], [1, 0x1000], [1, 0x6000], [1, 0x7000], [2, 0x0000]
-     ];
+  console.log('Starting algorithm comparison...');
+  
+  try {
+    const testSequences = [
+      [1, 0x0000], [1, 0x1000], [1, 0x2000], [2, 0x0000], [2, 0x1000],
+      [1, 0x3000], [1, 0x4000], [1, 0x5000], [2, 0x2000], [2, 0x3000],
+      [1, 0x0000], [1, 0x1000], [1, 0x6000], [1, 0x7000], [2, 0x0000]
+    ];
 
-     const response = await axios.post(`${API_BASE}/compare_algorithms`, {
-       sequences: testSequences,
-       future_accesses: testSequences.slice(5)
-     });
-     
-     if (response.data.success) {
-       setAlgorithmComparison(response.data.comparison);
-       setShowComparison(true);
-       setError(null);
-     }
-   } catch (error) {
-     setError('Error comparing algorithms: ' + error.message);
-   }
- };
+    console.log('Test sequences:', testSequences);
+
+    const response = await axios.post(`${API_BASE}/compare_algorithms`, {
+      sequences: testSequences,
+      future_accesses: testSequences.slice(5)
+    });
+    
+    console.log('Comparison response:', response.data);
+    
+    if (response.data.success) {
+      setAlgorithmComparison(response.data.comparison);
+      setShowComparison(true);
+      setError(null);
+      console.log('Comparison modal should show now');
+    } else {
+      setError('Algorithm comparison failed: ' + (response.data.error || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('Comparison error:', error);
+    setError('Error comparing algorithms: ' + error.message);
+  }
+};
 
  const generateReport = async () => {
    if (connectionStatus !== 'connected') {
@@ -374,43 +388,46 @@ function App() {
    }
  };
 
- const renderConnectionStatus = () => {
-   return (
-     <div className={`connection-status ${connectionStatus}`}>
-       {connectionStatus === 'connected' && (
-         <>
-           <CheckCircle size={16} />
-           <span>Connected</span>
-         </>
-       )}
-       {connectionStatus === 'connecting' && (
-         <>
-           <div className="spinner"></div>
-           <span>Connecting...</span>
-         </>
-       )}
-       {connectionStatus === 'disconnected' && (
-         <>
-           <AlertCircle size={16} />
-           <span>Disconnected</span>
-           <button onClick={checkConnection} className="retry-btn">Retry</button>
-         </>
-       )}
-     </div>
-   );
- };
+ // Tambahkan di dalam renderError function, setelah renderError
+const renderConnectionStatus = () => {
+    return (
+      <div className={`connection-status ${connectionStatus}`}>
+        {connectionStatus === 'connected' && (
+          <>
+            <CheckCircle size={16} />
+            <span>Connected</span>
+          </>
+        )}
+        {connectionStatus === 'connecting' && (
+          <>
+            <div className="spinner"></div>
+            <span>Connecting...</span>
+          </>
+        )}
+        {connectionStatus === 'disconnected' && (
+          <>
+            <AlertCircle size={16} />
+            <span>Disconnected</span>
+            <button onClick={checkConnection} className="retry-btn">Retry</button>
+          </>
+        )}
+      </div>
+    );
+  };
 
- const renderError = () => {
-   if (!error) return null;
-   
-   return (
-     <div className="error-message">
-       <AlertCircle size={16} />
-       <span>{error}</span>
-       <button onClick={() => setError(null)} className="close-error">×</button>
-     </div>
-   );
- };
+const renderError = () => {
+  if (!error) return null;
+  
+  return (
+    <div className="error-message">
+      <AlertCircle size={16} />
+      <span>{error}</span>
+      <button onClick={() => setError(null)} className="close-error">×</button>
+    </div>
+  );
+};
+
+ 
 
  const renderPhysicalMemory = () => {
    if (!memoryState) {
