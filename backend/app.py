@@ -8,7 +8,7 @@ import random
 import math
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"])
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 class VirtualMemorySimulator:
    def __init__(self, physical_frames=16, page_size=4096, virtual_pages=32):
