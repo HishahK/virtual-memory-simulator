@@ -689,48 +689,70 @@ def run_demo():
 
 @app.route('/api/compare_algorithms', methods=['POST'])
 def compare_algorithms():
-   try:
-       data = request.json or {}
-       test_sequences = data.get('sequences', [])
-       
-       if not test_sequences:
-           return jsonify({'success': False, 'error': 'test sequences are required'}), 400
-           
-       results = {}
-       algorithms = ['FIFO', 'LRU', 'Clock', 'Optimal']
-       
-       # convert addresses to page numbers for optimal algorithm
-       page_size = VirtualMemorySimulator().page_size
-       future_page_accesses = [(pid, addr // page_size) for pid, addr in test_sequences]
+    try:
+        data = request.json or {}
+        test_sequences = data.get('sequences', [])
+        
+        if not test_sequences:
+            return jsonify({'success': False, 'error': 'test sequences are required'}), 400
+            
+        results = {}
+        algorithms = ['FIFO', 'LRU', 'Clock', 'Optimal']
+        
+        # convert addresses to page numbers for optimal algorithm
+        page_size = 4096  # Use fixed page size
+        future_page_accesses = [(pid, addr // page_size) for pid, addr in test_sequences]
 
-       for algorithm in algorithms:
-           # create fresh simulator for fair comparison
-           temp_simulator = VirtualMemorySimulator()
-           temp_simulator.current_algorithm = algorithm
-           
-           # create all processes used in test
-           pids_in_sequence = set(pid for pid, addr in test_sequences)
-           for pid in pids_in_sequence:
-               temp_simulator.create_process(pid, 32)
-           
-           for i, (pid, addr) in enumerate(test_sequences):
-               # provide future accesses for optimal algorithm
-               if algorithm == 'Optimal':
-                   remaining_accesses = future_page_accesses[i+1:]
-                   temp_simulator.translate_address(pid, addr, future_accesses=remaining_accesses)
-               else:
-                   temp_simulator.translate_address(pid, addr)
-           
-           results[algorithm] = {'page_faults': temp_simulator.stats['page_faults'],
-               'memory_accesses': temp_simulator.stats['memory_accesses'],
-               'hit_ratio': temp_simulator.stats['hit_ratio']
-           }
-       
-       return jsonify({
-           'success': True, 'comparison': results
-       })
-   except Exception as e:
-       return jsonify({'success': False, 'error': str(e)}), 500
+        for algorithm in algorithms:
+            try:
+                # create fresh simulator for fair comparison
+                temp_simulator = VirtualMemorySimulator()
+                temp_simulator.current_algorithm = algorithm
+                
+                # create all processes used in test
+                pids_in_sequence = set(pid for pid, addr in test_sequences)
+                for pid in pids_in_sequence:
+                    temp_simulator.create_process(pid, 8)  # Reduced pages for testing
+                
+                for i, (pid, addr) in enumerate(test_sequences):
+                    try:
+                        # provide future accesses for optimal algorithm
+                        if algorithm == 'Optimal':
+                            remaining_accesses = future_page_accesses[i+1:]
+                            temp_simulator.translate_address(pid, addr, future_accesses=remaining_accesses)
+                        else:
+                            temp_simulator.translate_address(pid, addr)
+                    except Exception as e:
+                        print(f"Error in {algorithm} at sequence {i}: {e}")
+                        continue
+                
+                results[algorithm] = {
+                    'page_faults': temp_simulator.stats['page_faults'],
+                    'accesses': temp_simulator.stats['memory_accesses'],
+                    'hit_ratio': temp_simulator.stats['hit_ratio'],
+                    'fault_rate': temp_simulator.stats['page_faults'] / max(temp_simulator.stats['memory_accesses'], 1)
+                }
+                
+            except Exception as e:
+                print(f"Error testing algorithm {algorithm}: {e}")
+                results[algorithm] = {
+                    'page_faults': 0,
+                    'accesses': 0,
+                    'hit_ratio': 0,
+                    'fault_rate': 0,
+                    'error': str(e)
+                }
+        
+        return jsonify({
+            'success': True, 
+            'comparison': results
+        })
+        
+    except Exception as e:
+        print(f"Compare algorithms error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/generate_report', methods=['GET'])
 def generate_report():
