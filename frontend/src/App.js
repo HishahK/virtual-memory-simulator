@@ -1,33 +1,33 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
-  Play, Square, RotateCcw, Plus, Minus, 
-  Monitor, Database, Activity, Settings,
-  AlertCircle, CheckCircle, Search, BarChart3,
-  FileText, Shuffle, TrendingUp, Cpu,
-  Clock, Target, Layers, Zap
+ Play, Square, RotateCcw, Plus, Minus, 
+ Monitor, Database, Activity, Settings,
+ AlertCircle, CheckCircle, Search, BarChart3,
+ FileText, Shuffle, TrendingUp, Cpu,
+ Clock, Target, Layers, Zap
 } from 'lucide-react';
 import './App.css';
 
 const API_BASE = 'http://localhost:5001/api';
 
 function App() {
-  const [memoryState, setMemoryState] = useState(null);
-  const [currentAlgorithm, setCurrentAlgorithm] = useState('FIFO');
-  const [newProcessPages, setNewProcessPages] = useState(4);
-  const [selectedProcess, setSelectedProcess] = useState('');
-  const [virtualAddress, setVirtualAddress] = useState('');
-  const [translationResult, setTranslationResult] = useState(null);
-  const [isRunning, setIsRunning] = useState(false);
-  const [demoResults, setDemoResults] = useState([]);
-  const [connectionStatus, setConnectionStatus] = useState('connecting');
-  const [error, setError] = useState(null);
-  const [algorithmComparison, setAlgorithmComparison] = useState(null);
-  const [report, setReport] = useState(null);
-  const [workingSets, setWorkingSets] = useState(null);
-  const [tlbState, setTlbState] = useState(null);
-  const [showComparison, setShowComparison] = useState(false);
-  const [showReport, setShowReport] = useState(false);
+ const [memoryState, setMemoryState] = useState(null);
+ const [currentAlgorithm, setCurrentAlgorithm] = useState('FIFO');
+ const [newProcessPages, setNewProcessPages] = useState(4);
+ const [selectedProcess, setSelectedProcess] = useState('');
+ const [virtualAddress, setVirtualAddress] = useState('');
+ const [translationResult, setTranslationResult] = useState(null);
+ const [isRunning, setIsRunning] = useState(false);
+ const [demoResults, setDemoResults] = useState([]);
+ const [connectionStatus, setConnectionStatus] = useState('connecting');
+ const [error, setError] = useState(null);
+ const [algorithmComparison, setAlgorithmComparison] = useState(null);
+ const [report, setReport] = useState(null);
+ const [workingSets, setWorkingSets] = useState(null);
+ const [tlbState, setTlbState] = useState(null);
+ const [showComparison, setShowComparison] = useState(false);
+ const [showReport, setShowReport] = useState(false);
  const [showTlb, setShowTlb] = useState(false);
  const [showWorkingSets, setShowWorkingSets] = useState(false);
  const [randomAccessCount, setRandomAccessCount] = useState(10);
@@ -116,6 +116,31 @@ function App() {
      }
    };
  };
+
+ useEffect(() => {
+   const createParticles = () => {
+     const particlesContainer = document.createElement('div');
+     particlesContainer.className = 'floating-particles';
+     
+     for (let i = 0; i < 9; i++) {
+       const particle = document.createElement('div');
+       particle.className = 'particle';
+       particlesContainer.appendChild(particle);
+     }
+     
+     document.body.appendChild(particlesContainer);
+     
+     return () => {
+       if (document.body.contains(particlesContainer)) {
+         document.body.removeChild(particlesContainer);
+       }
+     };
+   };
+   
+   const cleanupParticles = createParticles();
+   
+   return cleanupParticles;
+ }, []);
 
  const checkConnection = async () => {
    try {
@@ -227,35 +252,35 @@ function App() {
  };
 
  const resetSimulator = async () => {
-  if (connectionStatus !== 'connected') {
-    setError('Not connected to backend');
-    return;
-  }
+   if (connectionStatus !== 'connected') {
+     setError('Not connected to backend');
+     return;
+   }
 
-  try {
-    const response = await axios.post(`${API_BASE}/reset`);
-    
-    if (response.data.success) {
-      setMemoryState(response.data.memory_state);
-      setTranslationResult(null);
-      setDemoResults([]);
-      setCurrentAlgorithm('FIFO');
-      setSelectedProcess('');
-      setVirtualAddress('');
-      setAlgorithmComparison(null);
-      setReport(null);
-      setWorkingSets(null);
-      setTlbState(null);
-      setShowComparison(false);
-      setShowReport(false);
-      setShowTlb(false);
-      setShowWorkingSets(false);
-      setError(null);
-    }
-  } catch (error) {
-    setError('Error resetting simulator: ' + error.message);
-  }
-};
+   try {
+     const response = await axios.post(`${API_BASE}/reset`);
+     
+     if (response.data.success) {
+       setMemoryState(response.data.memory_state);
+       setTranslationResult(null);
+       setDemoResults([]);
+       setCurrentAlgorithm('FIFO');
+       setSelectedProcess('');
+       setVirtualAddress('');
+       setAlgorithmComparison(null);
+       setReport(null);
+       setWorkingSets(null);
+       setTlbState(null);
+       setShowComparison(false);
+       setShowReport(false);
+       setShowTlb(false);
+       setShowWorkingSets(false);
+       setError(null);
+     }
+   } catch (error) {
+     setError('Error resetting simulator: ' + error.message);
+   }
+ };
 
  const runDemo = async () => {
    if (connectionStatus !== 'connected') {
@@ -283,42 +308,42 @@ function App() {
  };
 
  const compareAlgorithms = async () => {
-  if (connectionStatus !== 'connected') {
-    setError('Not connected to backend');
-    return;
-  }
+   if (connectionStatus !== 'connected') {
+     setError('Not connected to backend');
+     return;
+   }
 
-  console.log('Starting algorithm comparison...');
-  
-  try {
-    const testSequences = [
-      [1, 0x0000], [1, 0x1000], [1, 0x2000], [2, 0x0000], [2, 0x1000],
-      [1, 0x3000], [1, 0x4000], [1, 0x5000], [2, 0x2000], [2, 0x3000],
-      [1, 0x0000], [1, 0x1000], [1, 0x6000], [1, 0x7000], [2, 0x0000]
-    ];
+   console.log('Starting algorithm comparison...');
+   
+   try {
+     const testSequences = [
+       [1, 0x0000], [1, 0x1000], [1, 0x2000], [2, 0x0000], [2, 0x1000],
+       [1, 0x3000], [1, 0x4000], [1, 0x5000], [2, 0x2000], [2, 0x3000],
+       [1, 0x0000], [1, 0x1000], [1, 0x6000], [1, 0x7000], [2, 0x0000]
+     ];
 
-    console.log('Test sequences:', testSequences);
+     console.log('Test sequences:', testSequences);
 
-    const response = await axios.post(`${API_BASE}/compare_algorithms`, {
-      sequences: testSequences,
-      future_accesses: testSequences.slice(5)
-    });
-    
-    console.log('Comparison response:', response.data);
-    
-    if (response.data.success) {
-      setAlgorithmComparison(response.data.comparison);
-      setShowComparison(true);
-      setError(null);
-      console.log('Comparison modal should show now');
-    } else {
-      setError('Algorithm comparison failed: ' + (response.data.error || 'Unknown error'));
-    }
-  } catch (error) {
-    console.error('Comparison error:', error);
-    setError('Error comparing algorithms: ' + error.message);
-  }
-};
+     const response = await axios.post(`${API_BASE}/compare_algorithms`, {
+       sequences: testSequences,
+       future_accesses: testSequences.slice(5)
+     });
+     
+     console.log('Comparison response:', response.data);
+     
+     if (response.data.success) {
+       setAlgorithmComparison(response.data.comparison);
+       setShowComparison(true);
+       setError(null);
+       console.log('Comparison modal should show now');
+     } else {
+       setError('Algorithm comparison failed: ' + (response.data.error || 'Unknown error'));
+     }
+   } catch (error) {
+     console.error('Comparison error:', error);
+     setError('Error comparing algorithms: ' + error.message);
+   }
+ };
 
  const generateReport = async () => {
    if (connectionStatus !== 'connected') {
@@ -388,46 +413,43 @@ function App() {
    }
  };
 
- // Tambahkan di dalam renderError function, setelah renderError
-const renderConnectionStatus = () => {
-    return (
-      <div className={`connection-status ${connectionStatus}`}>
-        {connectionStatus === 'connected' && (
-          <>
-            <CheckCircle size={16} />
-            <span>Connected</span>
-          </>
-        )}
-        {connectionStatus === 'connecting' && (
-          <>
-            <div className="spinner"></div>
-            <span>Connecting...</span>
-          </>
-        )}
-        {connectionStatus === 'disconnected' && (
-          <>
-            <AlertCircle size={16} />
-            <span>Disconnected</span>
-            <button onClick={checkConnection} className="retry-btn">Retry</button>
-          </>
-        )}
-      </div>
-    );
-  };
+ const renderConnectionStatus = () => {
+   return (
+     <div className={`connection-status ${connectionStatus}`}>
+       {connectionStatus === 'connected' && (
+         <>
+           <CheckCircle size={16} />
+           <span>Connected</span>
+         </>
+       )}
+       {connectionStatus === 'connecting' && (
+         <>
+           <div className="spinner"></div>
+           <span>Connecting...</span>
+         </>
+       )}
+       {connectionStatus === 'disconnected' && (
+         <>
+           <AlertCircle size={16} />
+           <span>Disconnected</span>
+           <button onClick={checkConnection} className="retry-btn">Retry</button>
+         </>
+       )}
+     </div>
+   );
+ };
 
-const renderError = () => {
-  if (!error) return null;
-  
-  return (
-    <div className="error-message">
-      <AlertCircle size={16} />
-      <span>{error}</span>
-      <button onClick={() => setError(null)} className="close-error">×</button>
-    </div>
-  );
-};
-
- 
+ const renderError = () => {
+   if (!error) return null;
+   
+   return (
+     <div className="error-message">
+       <AlertCircle size={16} />
+       <span>{error}</span>
+       <button onClick={() => setError(null)} className="close-error">×</button>
+     </div>
+   );
+ };
 
  const renderPhysicalMemory = () => {
    if (!memoryState) {
