@@ -182,7 +182,7 @@ class VirtualMemorySimulator:
                     {'step': 'tlb_lookup', 'description': f'TLB Hit for page {page_number}.'},
                     {'step': 'address_calculation', 'description': f'Physical Address = (Frame {frame} * Page Size) + Offset {offset} = {physical_address}'}
                 ]
-            }
+            }, None
         
         self.tlb_misses += 1
         page_table = self.processes[pid_str]['page_table']
@@ -231,7 +231,7 @@ class VirtualMemorySimulator:
                 'physical_address': physical_address, 'frame': page_entry['frame'],
                 'page_fault': page_faulted, 'tlb_hit': False,
                 'translation_steps': translation_steps
-            }
+            }, None
             
         return None, "Failed to handle page fault"
 
@@ -316,7 +316,6 @@ class VirtualMemorySimulator:
             
             self.clock_pointer = (self.clock_pointer + 1) % self.physical_frames
             if self.clock_pointer == start_pointer:
-                # Full circle, treat as FIFO
                 return self.select_fifo_victim()
         
     def select_optimal_victim(self, future_accesses):
@@ -332,7 +331,6 @@ class VirtualMemorySimulator:
                 next_use = next(i for i, (p, pg) in enumerate(future_accesses) if p == mem_page['pid'] and pg == mem_page['page'])
                 future_use[key] = next_use
             except StopIteration:
-                # This page is not used again, perfect victim
                 frame_idx = self.processes[str(mem_page['pid'])]['page_table'][str(mem_page['page'])]['frame']
                 return {'frame': frame_idx, 'pid': mem_page['pid'], 'page': mem_page['page'], 'reason': 'Page will not be used again in the future.'}
 
@@ -559,7 +557,6 @@ def set_algorithm_route():
         simulator.clock_pointer = 0
         simulator.clock_bits.clear()
         
-        # Re-initialize algorithm state based on current memory
         for frame_idx, frame_content in enumerate(simulator.physical_memory):
             if frame_content:
                 pid, page_num = frame_content['pid'], frame_content['page']
@@ -572,7 +569,6 @@ def set_algorithm_route():
                     access_time = simulator.processes[str(pid)]['page_table'][str(page_num)].get('access_time', time.time())
                     simulator.lru_access_order[key] = access_time
         
-        # Sort FIFO queue by load time if available
         if algorithm == 'FIFO':
              get_load_time = lambda item: simulator.processes[str(item[0])]['page_table'][str(item[1])].get('load_time', 0)
              simulator.fifo_queue.sort(key=get_load_time)
@@ -608,8 +604,8 @@ def run_demo_route():
         
         access_sequence = [
             (1, 0x1000), (1, 0x2000), (2, 0x1000), (1, 0x3000),
-            (2, 0x2000), (1, 0x4000), (2, 0x3000), (1, 0x1000), # TLB hit and/or LRU/Clock update
-            (1, 0x5000), (2, 0x4000) # Cause page faults
+            (2, 0x2000), (1, 0x4000), (2, 0x3000), (1, 0x1000),
+            (1, 0x5000), (2, 0x4000)
         ]
         
         for pid, addr in access_sequence:
@@ -643,7 +639,7 @@ def compare_algorithms_route():
                 
                 pids_in_sequences = sorted(list(set(pid for pid, addr in sequences)))
                 for pid in pids_in_sequences:
-                    temp_sim.create_process(pid, 32) # Give enough virtual pages
+                    temp_sim.create_process(pid, 32)
                 
                 for i, (pid, addr) in enumerate(sequences):
                     if algorithm == 'Optimal':
