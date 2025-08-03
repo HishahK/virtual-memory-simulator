@@ -526,8 +526,8 @@ def terminate_process_route():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/access_address', methods=['POST'])
-def access_address_route():
+@app.route('/api/translate_address', methods=['POST'])
+def translate_address_route():
     try:
         data = request.json
         pid = data.get('pid')
@@ -668,6 +668,39 @@ def generate_report_route():
     try:
         report = simulator.generate_report()
         return jsonify({'success': True, 'report': report})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/working_sets', methods=['GET'])
+def get_working_sets_route():
+    try:
+        working_sets = {}
+        for pid, process in simulator.processes.items():
+            working_sets[pid] = {
+                'size': len(process.get('working_set', [])),
+                'current_set': process.get('working_set', [])
+            }
+        
+        return jsonify({
+            'success': True,
+            'working_sets': working_sets
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/tlb_state', methods=['GET'])
+def get_tlb_state_route():
+    try:
+        total_tlb_lookups = simulator.tlb_hits + simulator.tlb_misses
+        return jsonify({
+            'success': True,
+            'tlb': dict(simulator.tlb),
+            'stats': {
+                'hits': simulator.tlb_hits,
+                'misses': simulator.tlb_misses,
+                'hit_ratio': simulator.tlb_hits / total_tlb_lookups if total_tlb_lookups > 0 else 0
+            }
+        })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
